@@ -217,8 +217,8 @@
           <stringProp name="LoopController.loops">10</stringProp>
         </LoopController>
         <hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET  Booking Details - Fail Test" enabled="true">
-            <stringProp name="HTTPSampler.path">/booking/${bookingid}</stringProp>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET  Booking Details - Fail Test">
+            <stringProp name="HTTPSampler.path">/booking/${bookingid}/${counter}</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
