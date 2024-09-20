@@ -9,62 +9,38 @@ on:
       - main
 
 jobs:
-  jmeter-test:
+  run-jmeter-tests:
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      matrix:
+        environment: [sit, uat]  # Define environments
+
     steps:
-      # Step 1: Check out the repository
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      # Step 2: Set up Java with the correct distribution
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '11'
+    - name: Set up JMeter
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jmeter  # Install JMeter
 
-      # Step 3: Install JMeter
-      - name: Install JMeter
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.tgz
-          tar -xzf apache-jmeter-5.4.1.tgz
-          sudo ln -s $(pwd)/apache-jmeter-5.4.1/bin/jmeter /usr/local/bin/jmeter
+    - name: Define environment-specific URL
+      run: |
+        if [ "${{ matrix.environment }}" == "sit" ]; then
+          echo "URL=restful-booker.herokuapp.com" >> $GITHUB_ENV
+        elif [ "${{ matrix.environment }}" == "uat" ]; then
+          echo "URL=UAT-restful-booker.herokuapp.com" >> $GITHUB_ENV
+        fi
 
-     
+    - name: Run JMeter tests in ${{ matrix.environment }} environment
+      run: |
+        jmeter -n -t APITTest.jmx -Jurl=${{ env.URL }} -l results_${{ matrix.environment }}.jtl
+      env:
+        JMETER_ENV: ${{ matrix.environment }}
 
-      # Step 6: Run JMeter Tests
-      - name: Run JMeter Test
-        run: |
-          jmeter -n -t APITest.jmx -l results.jtl -e -o output
-        continue-on-error: true
-
-      # Step 7: Print Directory Contents for Debugging
-      - name: Print JMeter Directory Contents
-        run: |
-          ls -R apache-jmeter-5.4.1
-
-      # Step 8: Print JMeter logs for debugging (if they exist)
-      - name: Print JMeter Logs
-        run: |
-          if [ -f apache-jmeter-5.4.1/bin/jmeter.log ]; then
-            cat apache-jmeter-5.4.1/bin/jmeter.log
-          else
-            echo "JMeter log file not found."
-          fi
-
-      # Step 9: Upload the JMeter Test Results (results.jtl) as an artifact
-      - name: Upload JMeter Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: jmeter-results
-          path: results.jtl
-
-      # Step 10: Upload the JMeter HTML Report as an artifact
-      - name: Upload JMeter HTML Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: jmeter-html-report
-          path: output
+    - name: Upload JMeter Test Results for ${{ matrix.environment }} environment
+      uses: actions/upload-artifact@v2
+      with:
+        name: results-${{ matrix.environment }}
+        path: results_${{ matrix.environment }}.jtl
